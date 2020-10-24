@@ -1,0 +1,15 @@
+{
+    "name": "cotto/airplane-backend",
+    "description": "Backend for IG game \"The airpanes with friends\"",
+    "type": "project",
+    "authors": [
+        {
+            "name": "andresoaea",
+            "email": "constantin.andresoaea@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "cboden/ratchet": "^0.4.3"
+    }
+}
