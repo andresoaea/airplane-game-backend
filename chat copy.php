@@ -89,7 +89,7 @@ class Chat implements MessageComponentInterface {
 
         $to = $this->getOpponentConnection($conn);
         $to->send(json_encode([
-            'opponentDisconnected' => true
+            'action' => 'opponentDisconnected'
         ]));
     }
 

@@ -1,6 +1,6 @@
 {
     "name": "cotto/airplane-backend",
-    "description": "Backend for IG game \"The airpanes with friends\"",
+    "description": "Backend for IG game \"The airplanes with friends\"",
     "type": "project",
     "authors": [
         {
@@ -11,5 +11,10 @@
     "minimum-stability": "dev",
     "require": {
         "cboden/ratchet": "^0.4.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Chat\\": "chat/"
+        }
     }
 }
