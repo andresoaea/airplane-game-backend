@@ -1,13 +1,9 @@
 {
     "verbose": false,
-    "ignore": [".git", ".idea", "./vendor/*"],
+    "ignore": [".git", ".idea", "vendor/*"],
     "execMap": {
         "php": "php"
     },
     "restartable": "r",
-    "ext": "php",
-    "events": {
-        "restart": "kill-port 8080",
-        "crash": "kill-port 8080 && nodemon server.php"
-    }
+    "ext": "php"
 }

@@ -21,33 +21,66 @@ class Message {
         
         switch($decoded['action']) {
             case 'getMyRoom':
-                // Generate room code and put the player in
-                $roomId = $this->generateRoomId();
-                //var_dump($roomId);
-                
-                $this->chat->rooms[$roomId][] = $this->conn;
-                $this->conn->roomId = $roomId;
-
-
-               var_dump($this->conn->roomId);
-                
-
-                    
-                
-
-
-              
-
-                // Send room id back
-                $this->conn->send(json_encode([
-                    'action' => 'setMyRoom',
-                    'room'   => $roomId
-                    ]));
+                $this->createRoom();
                 break;
             case 'goToRoom':
-                //
+                $this->goToRoom($decoded['room']);
                 break;
         }
+    }
+
+    private function goToRoom($id) {
+        if(empty($id)) return;
+
+        if(array_key_exists($id, $this->chat->rooms)) {
+            $this->connectToExistingRoom($id);
+        } else {
+            $this->conn->send(json_encode([
+                'action' => 'invalidRoom'
+            ]));
+        }
+
+    }
+
+
+    private function connectToExistingRoom($roomId) {
+
+        $this->pushPlayerToRoom($roomId); 
+
+        // Notify player connected
+        foreach ($this->chat->rooms[$roomId] as $playerConnection) {
+            $playerConnection->send(json_encode([
+                'action' => 'enterToRoom',
+                'room'   => $roomId
+            ]));
+        }
+
+        //var_dump(array_keys($this->chat->rooms[$id]));
+
+
+    }
+
+    private function pushPlayerToRoom($roomId) {
+        $this->conn->roomId = $roomId;
+        $this->chat->rooms[$roomId][$this->conn->player['id']] = $this->conn;     
+    }
+
+
+    private function createRoom() {
+        // Generate room code and put the player in
+        $roomId = $this->generateRoomId();
+        $this->chat->closeAttachedRoom($this->conn);
+
+        $this->pushPlayerToRoom($roomId);
+        
+        // $this->conn->roomId = $roomId;
+        // $this->chat->rooms[$roomId][$this->conn->player['id']] = $this->conn;              
+
+        // Send room id back
+        $this->conn->send(json_encode([
+            'action' => 'setMyRoom',
+            'room'   => $roomId
+            ]));
     }
 
 
@@ -60,7 +93,7 @@ class Message {
             return $this->generateRoomId();
         }
 
-        return $id;
+        return strval($id);
        
     }
 

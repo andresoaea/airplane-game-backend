@@ -21,21 +21,18 @@ class Chat implements MessageComponentInterface {
 
         $playerId = $this->getRequestParams($conn)['playerId'];
 
-        //$roomId = $this->generateRoomId();
-        // $this->roomsIds[] = $roomId;
-        // $conn->roomId = $roomId;
-        $conn->playerId = $playerId;
+        $conn->player = [
+            'id'    => $playerId,
+            'name'  => 'Player ' . $playerId
+        ];
         $conn->roomId = null;
-        //$this->roomsIds[$roomId] = ['author' => $playerId];
-        
-       // var_dump($this->roomsIds);
 
        $this->clients->attach($conn);
     }
 
     public function onMessage(ConnectionInterface $from, $msg) {
 
-        $send = new Message($this, $from, $msg);
+        $message = new Message($this, $from, $msg);
 
         
 
@@ -47,8 +44,8 @@ class Chat implements MessageComponentInterface {
     }
 
     public function onClose(ConnectionInterface $conn) {
+        $this->closeAttachedRoom($conn);
         $this->clients->detach($conn);
-        //$this->closeRoom($conn);
     }
 
     public function onError(ConnectionInterface $conn, \Exception $e) {
@@ -62,19 +59,32 @@ class Chat implements MessageComponentInterface {
      */
 
     // Delete dissconected player from room & rooms ids list
-    public function closeRoom($conn) {
+    public function closeAttachedRoom($conn) {
+
        
-        if (($key = array_search($conn->roomId, array_keys($this->rooms))) !== false) {
-            unset($this->rooms[$key]);
+        // Notify opponent disconnected
+        foreach ($this->rooms[$conn->roomId] as $playerId => $playerConnection) {
+            
+            if($conn->player['id'] != $playerId) {
+                $playerConnection->send(json_encode([
+                    'action' => 'opponentDisconnected'
+                ]));
+            }
+            
         }
+        
+        // If connection is attached to a room, delete that romm
+        if(!empty($conn->roomId) && array_key_exists($conn->roomId, $this->rooms)) {
+            unset($this->rooms[$conn->roomId]);
+        }
+
+        //var_dump(array_keys($this->rooms));
 
         
     }
 
 
-    // private function requestRoom($conn) {
-    //     return $conn->roomId;
-    // }
+   
 
     /**
      *  Helpers -  custom methods
@@ -87,19 +97,5 @@ class Chat implements MessageComponentInterface {
         return $reqParams;
     }
 
-    // private function generateRoomId() {
-    //     $roomCode = '';
-    //     $arr = $this->roomsIds;
-    //     $roomsStringLen = strlen(count($arr));
-        
-    //     for($i=0; $i < 4; $i++) {
-    //         if($i < (4 - $roomsStringLen)) {
-    //             $roomCode .= '0';
-    //         }else {
-    //             $roomCode .= count($arr) + 1;
-    //             break;
-    //         }
-    //     }
-    //     return $roomCode;
-    // }
+   
 }
