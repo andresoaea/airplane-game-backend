@@ -1,31 +1,27 @@
 <?php
 namespace Chat;
 
-use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
+use Ratchet\MessageComponentInterface;
 
 class Chat implements MessageComponentInterface {
-    private $clients;
-    private $roomsIds;
     public $rooms;
+    private $clients;
             
     public function __construct() {
-        $this->clients = new \SplObjectStorage;
-        //$this->roomsIds = [];
         $this->rooms = [];
-
+        $this->clients = new \SplObjectStorage;
     }
 
     public function onOpen(ConnectionInterface $conn) {
       
-
-        $playerId = $this->getRequestParams($conn)['playerId'];
-
-        $conn->player = [
-            'id'    => $playerId,
-            'name'  => 'Player ' . $playerId
-        ];
         $conn->roomId = null;
+        $queryParams = $this->getRequestParams($conn);
+        $conn->player = [
+            'id'    => $queryParams['id'],
+            'name'  => $queryParams['name'],
+            'photo' => $queryParams['photo']
+        ];
 
        $this->clients->attach($conn);
     }
@@ -33,14 +29,8 @@ class Chat implements MessageComponentInterface {
     public function onMessage(ConnectionInterface $from, $msg) {
 
         $message = new Message($this, $from, $msg);
+        $message->handle();
 
-        
-
-        // foreach ($this->clients as $client) {
-        //     if ($from == $client) {
-        //         $from->send($msg);
-        //     }
-        // }
     }
 
     public function onClose(ConnectionInterface $conn) {
@@ -60,27 +50,22 @@ class Chat implements MessageComponentInterface {
 
     // Delete dissconected player from room & rooms ids list
     public function closeAttachedRoom($conn) {
-
+        if(empty($conn->roomId)) return;
        
         // Notify opponent disconnected
-        foreach ($this->rooms[$conn->roomId] as $playerId => $playerConnection) {
-            
+        foreach ($this->rooms[$conn->roomId] as $playerId => $playerConnection) {  
             if($conn->player['id'] != $playerId) {
                 $playerConnection->send(json_encode([
                     'action' => 'opponentDisconnected'
                 ]));
-            }
-            
+            }   
         }
         
         // If connection is attached to a room, delete that romm
-        if(!empty($conn->roomId) && array_key_exists($conn->roomId, $this->rooms)) {
+        if(array_key_exists($conn->roomId, $this->rooms)) {
             unset($this->rooms[$conn->roomId]);
         }
 
-        //var_dump(array_keys($this->rooms));
-
-        
     }
 
 

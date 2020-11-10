@@ -2,20 +2,18 @@
 
 namespace Chat;
 
-
 class Message {
+    private $msg;
     private $chat;
     private $conn;
-    private $msg;
 
     public function __construct($chat, $conn, $msg) {
+        $this->msg = $msg;
         $this->chat = $chat;
         $this->conn = $conn;
-        $this->msg = $msg;
-        $this->handleMsg();
     }
 
-    private function handleMsg() {
+    public function handle() {
         $decoded = json_decode($this->msg, true);
         if(!array_key_exists('action', $decoded)) return;
         
@@ -26,6 +24,21 @@ class Message {
             case 'goToRoom':
                 $this->goToRoom($decoded['room']);
                 break;
+            default:
+                $this->sendToOpponent($this->msg);
+               
+        }
+    }
+
+   
+    private function sendToOpponent($msg) {
+        if(empty($this->conn->roomId)) return;
+       
+        // Send message to opponent
+        foreach ($this->chat->rooms[$this->conn->roomId] as $playerId => $playerConnection) {  
+            if($this->conn->player['id'] != $playerId) {
+                $playerConnection->send($msg);
+            }   
         }
     }
 
@@ -45,14 +58,18 @@ class Message {
 
     private function connectToExistingRoom($roomId) {
 
-        $this->pushPlayerToRoom($roomId); 
+        $connected = $this->pushPlayerToRoom($roomId); 
 
         // Notify player connected
-        foreach ($this->chat->rooms[$roomId] as $playerConnection) {
-            $playerConnection->send(json_encode([
-                'action' => 'enterToRoom',
-                'room'   => $roomId
-            ]));
+        if($connected) {
+            $room = $this->chat->rooms[$roomId];
+            foreach ($room as $playerId => $playerConnection) {
+                $playerConnection->send(json_encode([
+                    'action'   => 'enterToRoom',
+                    'room'     => $roomId,
+                    'opponent' => (array_keys($room)[0] == $playerId) ? $room[array_keys($room)[1]]->player : $room[array_keys($room)[0]]->player
+                ]));
+            }
         }
 
         //var_dump(array_keys($this->chat->rooms[$id]));
@@ -61,8 +78,11 @@ class Message {
     }
 
     private function pushPlayerToRoom($roomId) {
+        if(count($this->chat->rooms) >= 2) return false;
+
         $this->conn->roomId = $roomId;
-        $this->chat->rooms[$roomId][$this->conn->player['id']] = $this->conn;     
+        $this->chat->rooms[$roomId][$this->conn->player['id']] = $this->conn;    
+        return true; 
     }
 
 
@@ -93,7 +113,9 @@ class Message {
             return $this->generateRoomId();
         }
 
-        return strval($id);
+        return '1000'; // Development room
+
+        //return strval($id);
        
     }
 

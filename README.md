@@ -1,3 +1,3 @@
-### The Airplanes with friends
+### Airplanes with Friends (Backend)
 
-#### Backend side of the game - based on websockets
+#### Realtime communication Websocket Server powered by Ratchet
